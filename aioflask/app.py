@@ -1,6 +1,5 @@
 import asyncio
 from functools import wraps
-from inspect import iscoroutinefunction
 import os
 from flask import Flask as OriginalFlask, cli
 from flask.globals import _app_ctx_stack, _request_ctx_stack
@@ -23,7 +22,7 @@ class Flask(OriginalFlask):
         self.async_fixed = False
 
     def ensure_sync(self, func):
-        if not iscoroutinefunction(func):
+        if not asyncio.iscoroutinefunction(func):
             return func
 
         @wraps(func)
