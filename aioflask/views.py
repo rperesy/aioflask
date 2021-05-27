@@ -7,6 +7,9 @@ from greenletio import await_
 class View(original_views.View):
     @classmethod
     def lookup_async_method(cls):
+        """ check if any async methods
+        belonging to the view class
+        """
         methods = getmembers(cls, predicate=iscoroutinefunction)
         name, func = next((meth for meth in methods), (None, None))
         return name, bool(func)
@@ -16,7 +19,7 @@ class View(original_views.View):
         async_method, return_coro = cls.lookup_async_method()
 
         # if any of the class methods are async, return_coro is True
-        # and this view function have to be a coroutine
+        # and this view function has to be a coroutine
         def view(*args, **kwargs):
             self = view.view_class(*class_args, **class_kwargs)
             
@@ -24,7 +27,8 @@ class View(original_views.View):
                 return await_(self.dispatch_request(*args, **kwargs))
             return self.dispatch_request(*args, **kwargs)
 
-        view = asyncio.coroutine(view) if return_coro else view
+        if return_coro:
+            view = asyncio.coroutine(view)
 
         if cls.decorators:
             view.__name__ = name
