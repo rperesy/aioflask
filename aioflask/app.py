@@ -1,6 +1,6 @@
 import asyncio
 from functools import wraps
-from inspect import iscoroutinefunction
+from inspect import iscoroutinefunction, getmembers
 import os
 from flask import Flask as OriginalFlask, cli
 from flask.globals import _app_ctx_stack, _request_ctx_stack
@@ -23,9 +23,6 @@ class Flask(OriginalFlask):
         self.async_fixed = False
 
     def ensure_sync(self, func):
-        if not iscoroutinefunction(func):
-            return func
-
         @wraps(func)
         def decorated(*args, **kwargs):
             reqctx = _request_ctx_stack.top.copy()
@@ -36,6 +33,14 @@ class Flask(OriginalFlask):
                     return await func(*args, **kwargs)
 
             return _coro()
+
+        if hasattr(func, 'view_class'):
+            if getmembers(func.view_class, predicate=iscoroutinefunction):
+                return decorated
+            return func
+
+        if not iscoroutinefunction(func):
+            return func
 
         return decorated
 
